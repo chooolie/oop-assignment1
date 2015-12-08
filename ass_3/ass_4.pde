@@ -7,16 +7,37 @@ int[] pub_arr;
    
 float border;
 int min, max;
-
+import java.util.*;
+import ddf.minim.spi.*;
+import ddf.minim.signals.*;
+import ddf.minim.*;
+import ddf.minim.analysis.*;
+import ddf.minim.ugens.*;
+import ddf.minim.effects.*;
+ boolean keyP;
+ 
+Minim minim;
+AudioPlayer song;
 PImage image;
+
+
           
 float segments = 12;
 int centX, centY;
 float lastX, lastY;
 int col = 100;
+
 //int colInc = 1;
 float rot = 0.0f; // rotate by this each time
+import controlP5.*;
 
+ControlP5 cp5;
+
+//int colors = color(255);
+
+boolean toggleValue = false;
+
+color[] colors = new color[16];//[pub_arr.length];
 
 void setup()
 {
@@ -31,6 +52,11 @@ void setup()
   for (int i = 0; i < data.size (); i++)
   {
     publisher.add(data.get(i).publisher);
+  }
+  
+  for (int i = 0 ; i < colors.length ; i ++)
+  {
+    colors[i] = color(0, random(100, 255), random(100, 255));
   }
 
   Collections.sort(publisher);//function to sort in alphabetical order
@@ -47,10 +73,21 @@ void setup()
   println("g3 = " + g3);
   println("g4 = " + g4);
   println(pub_arr[1]);
- 
+  //make noise
+  minim = new Minim(this);
+  song = minim.loadFile("page_flip.wav");
+  //creating toggle button
+  cp5 = new ControlP5(this);
+  
+  // create a toggle
+  cp5.addToggle("toggleValue")
+     .setPosition(40,100)
+     .setSize(50,20)
+     ;
+  
 }
 
-void drawBookSnake()
+void drawSpiral()
 {
   
   float offset = 0.0f; // Offset each iteration by this
@@ -58,55 +95,46 @@ void drawBookSnake()
   image = loadImage("spirals.JPG");
   float bigRadius = 1;
   float smallRadius = 2;
-  //stroke(col, 0, 0);
   segments = 8;
     
-  for (int i = 0 ; i <  100; i ++)
+  for (int i = 0 ; i < 30; i ++)
   {
     float thetaInc = TWO_PI / segments;    
     for (float theta = 0 ; theta < TWO_PI ; theta += thetaInc)
     {
       float x = centX + sin(theta + offset + rot) * bigRadius; 
       float y = centY -cos(theta + offset + rot) * bigRadius;
-      //fill(col, 0, random(0, 255));
-      //stroke(col, 0, random(0, 255));
-
-      //line(lastX, lastY, x, y);
+      
       lastX = x;
       lastY = y;
       image(image,x, y,  smallRadius * 2.0f, smallRadius * 2.0f); 
-      //ellipse(x, y,smallRadius * 2.0f, smallRadius * 2.0f );
+    
     }
     bigRadius += 5f;
     smallRadius += 0.2f;
     offset += 0.1f;
   }
- // if ((col > 255) || (col < 100))
- // {
-    //colInc = - colInc;
-  //}
-  //col += colInc;
-  rot += (float)(mouseY - centY) / ((float) height * 10.0f);
-  border= 30;
-  if (mouseX >= border && mouseX <= width - border)
+
+  rot += (float)(mouseX - centY) / ((float) height * 10.0f);
+  text("Slide mouse accross screen to see all books",100,100);
+  border= 20;
+  if (mouseX >= border && mouseX <= width - 220)
   {
     stroke(255, 102, 178);
     fill(255, 0, 0);
-    line(mouseX, border, mouseX, height - border);
+    //line(mouseX, border, mouseX, height - border);
     int i = (int) map(mouseX, border, width - border, 0, data.size() - 1);
     float y = map(data.get(i).volume_sales, min, max, height - border, border);
-    ellipse(mouseX, y, 5, 5);
+    //ellipse(mouseX, y, 5, 5);
     fill(255);
-    text("Title: " + data.get(i).title, mouseX + 10, y);
-    text("Author: " + data.get(i).author, mouseX + 10, y + 10);
-    text("Volumes sold: "+ data.get(i).volume_sales, mouseX +10, y+20);
+    textSize(35);
+    text("Title:\n " + data.get(i).title, mouseX + 10, 200);
+   
   }
 }
  
 void drawMenu()
 {
-  
- 
   background(0);
   stroke(255);
   strokeWeight(20);
@@ -118,8 +146,6 @@ void drawMenu()
   text("Press 1 for first graph", 250,200);
   text("Press 2 for second graph", 245,500);
   text("Press 3 for book animation", 240,800);
-  
-  
  
 }
 
@@ -135,7 +161,6 @@ void loaddata()
 
 void order()
 {
-  //DOING IT HERE YO
   for (int c = 0; c < publisher.size(); c++)
   {
     if (publisher.get(c).equals("Transworld"))
@@ -204,11 +229,6 @@ void order()
       g16++;
     }
   }
-   
-   
-   
-              
-
 }
 
 /* what the numbers should be
@@ -283,7 +303,7 @@ void drawLineGraph()
   //part of first graph
   textSize(20);
   strokeWeight(10);
-    stroke(204, 153, 255);  
+  stroke(204, 153, 255);  
   line(border - 5, height - border, width - border, height - border);
   line(border, border, border, height - border + 5);
 
@@ -331,9 +351,21 @@ void drawGraph2()
   { 
   case 0:
     {
+       pushMatrix();
+  //to change the color of the book cover
+  if(toggleValue==true) {
+    fill(255,51,51);
+  } else {
+    fill(0, 0, 255);
+  }
+  
+  rect(500, 300, 300, 500);
+  
+   
+  popMatrix();
       
-      fill(255, 0, 0);
-      rect(500, 300, 300, 500);
+      //fill(255, 0, 0);
+      //rect(500, 300, 300, 500);
       fill(255);
       textSize(25);
       text("Different publishers",520, 350);
@@ -357,25 +389,11 @@ void drawGraph2()
       break;
       
     }
-    
-    /*case 1:
-    {
-      rect(200,300,300,500);
-      rect(500,300,300,500);
-      for(int i = 0;i<pub_arr.length;i++)
-       {
-        
-        float y = map(wins.get(i), lowWins, highWins, 500 - 50, 50);
-        float radius = map(wins.get(i), lowWins, highWins, 30, 100);
-        fill(colour[i]);
-        stroke(colour[i]);
-        ellipse(stage_x.get(i), y, radius, radius);
-      }*/
       
 
   case 1:
     {
-       fill(122);
+       /*fill(122);
        rect(200,300,300,500);
        rect(500,300,300,500);
        int var, temp = 0;
@@ -394,17 +412,35 @@ void drawGraph2()
           rect(500,300,300,pub_arr[i]);
        }
        
-       
-      
-       
-       /*rect(500,300+pub_arr[i] ,300,g2);
+       rect(500,300+pub_arr[i] ,300,g2);
        
        rect(500,300+g1 + g2,300,g3);*/
        
-       }
-       
-       
-       
+       fill(122);
+       rectMode(CORNER);
+       rect(200,300,300,500);
+       rect(500,300,300,500);
+       int var = 0;
+       rectMode(CORNERS);
+       for(int i = 0;i<pub_arr.length;i++)
+       {
+        stroke(colors[i]);
+          fill(colors[i]);
+         //fill(255);
+         if(i>0)
+         {
+          
+           rect(500,300+var,800,300+var+pub_arr[i]);
+           var = var + pub_arr[i];
+         }
+         else
+         {
+            
+            rect(500,300,800,300+pub_arr[i]);
+            var = var + pub_arr[i];
+         }
+       }        
+       rectMode(CORNER);
     }
 
     break;
@@ -429,23 +465,19 @@ void draw()
   case 1:
     {
       drawLineGraph();
-      drawGraph1();
-    
-   
+      drawGraph1();  
       break;
     }
   case 2:
     {
-
       drawGraph2();
-
       break;
     }
     case 3:
     {
-      drawBookSnake();
+      drawSpiral();
       break;
-  }
+    }
 }
 }
 
@@ -467,11 +499,18 @@ void keyPressed()
       if (mode2 == 1)
       {
         mode2 = 0;
+        keyP=true;
+      song.play();
+      song.rewind();
       } else
       {
         mode2 = 1;
+        keyP=true;
+      song.play();
+      song.rewind();
       }
     }
   }
+
   println(mode, mode2);
 }
